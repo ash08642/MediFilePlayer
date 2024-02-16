@@ -18,6 +18,7 @@ namespace MediFilePlayer
         private MidiMusic music;
         private MidiPlayer player;
         private CancellationTokenSource cts;
+        private bool paused;
 
         public MediPlayer(string fileName)
         {
@@ -35,7 +36,7 @@ namespace MediFilePlayer
             Console.WriteLine($"Song Length: {music.GetTotalPlayTimeMilliseconds() / 1000}s");
             player.EventReceived += displayTracks;
             cts = new CancellationTokenSource();
-
+            paused = false;
             ThreadPool.QueueUserWorkItem(new WaitCallback(loop), cts.Token);
             Thread.Sleep(100);
             player.EventReceived -= displayTracks;
@@ -43,20 +44,31 @@ namespace MediFilePlayer
 
         public void play()
         {
-            cts = new CancellationTokenSource();
-            ThreadPool.QueueUserWorkItem(new WaitCallback(loop), cts.Token);
+            if (paused)
+            {
+                paused = false;
+                cts = new CancellationTokenSource();
+                ThreadPool.QueueUserWorkItem(new WaitCallback(loop), cts.Token);
+            }
         }
 
         public void pause()
         {
-            cts.Cancel();
-            cts.Dispose();
+            if (!paused)
+            {
+                paused = true;
+                cts.Cancel();
+                cts.Dispose();
+            }
         }
 
         public void stopPlaying()
         {
-            cts.Cancel();
-            cts.Dispose();
+            if (!paused)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
             player.Dispose();
         }
 
